@@ -59,6 +59,23 @@ def build_opts(
                 "preferredcodec": "flac",
             }
         )
+    elif audio_format == "opus":
+        postprocessors.append(
+            {
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "opus",
+            }
+        )
+    elif audio_format == "remux":
+        # yt-dlp "best" extract: stream-copy into a conventional audio extension when
+        # ffmpeg supports it (e.g. opus-in-webm -> .opus, aac -> .m4a). Uncommon codecs
+        # may fall back to transcoding (see yt_dlp FFmpegExtractAudioPP).
+        postprocessors.append(
+            {
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "best",
+            }
+        )
     if split_chapters:
         postprocessors.append({"key": "FFmpegSplitChapters"})
     if postprocessors:
@@ -84,15 +101,14 @@ def main() -> int:
     )
     parser.add_argument(
         "--audio-format",
-        choices=("native", "mp3", "flac"),
+        choices=("native", "remux", "mp3", "flac", "opus"),
         default="native",
         metavar="FMT",
-        help="Output container/codec: native (default), mp3, or flac (requires ffmpeg)",
-    )
-    parser.add_argument(
-        "--mp3",
-        action="store_true",
-        help=argparse.SUPPRESS,  # backward compatibility; same as --audio-format mp3
+        help=(
+            "Output: native (default, keep container e.g. webm). remux: same codec, "
+            "common extension when possible (opus->.opus, aac->.m4a), stream-copy (needs ffmpeg). "
+            "mp3/flac/opus: transcode with ffmpeg."
+        ),
     )
     parser.add_argument(
         "--split-chapters",
@@ -111,18 +127,12 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    audio_format = args.audio_format
-    if args.mp3:
-        if args.audio_format != "native":
-            parser.error("--mp3 cannot be used together with --audio-format (use --audio-format mp3)")
-        audio_format = "mp3"
-
     output_dir: Path = args.output_dir.expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
     opts = build_opts(
         output_dir,
-        audio_format=audio_format,
+        audio_format=args.audio_format,
         split_chapters=args.split_chapters,
         quiet=args.quiet,
     )
