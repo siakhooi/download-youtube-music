@@ -5,7 +5,7 @@ install-pip:
 install-ffmpeg:
     sudo apt install -y ffmpeg
 full:
-    python3 download_audio.py {{url}}
+    python3 download_audio.py -o ./ --audio-format remux {{url}}
 split:
     python3 download_audio.py -o ./ --split-chapters {{url}}
 split-flac:
