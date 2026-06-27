@@ -1,4 +1,5 @@
-url := "https://www.youtube.com/watch?v=JEoNjnyd56s"
+url := ""
+
 info:
 install-pip:
     pip -r requirements.txt
